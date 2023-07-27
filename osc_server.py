@@ -25,9 +25,17 @@ def shutdown():
     set_remote_all_params_relevant(False)
 
 
-def process_osc_message(address, osc_data):
+def process_osc_message(address, osc_data, standard):
     if address not in cached_address_conversions:
-        cached_address_conversions[address] = address.split("/")[-1].lower()
+        split = address.split("/")
+        protocol = split[3]
+        if protocol != "v2":
+            protocol = "v1"
+        name = split[-1]
+        if protocol != standard:
+            return
+
+        cached_address_conversions[address] = name.lower()
     param_name = cached_address_conversions[address]
     if param_name in shape_keys:
         shape_key = shape_keys[param_name]
@@ -35,7 +43,7 @@ def process_osc_message(address, osc_data):
             shape_key.value = osc_data
 
 
-def recv_and_process():
+def recv_and_process(standard):
     # While our cancellation token is false, keep receiving and processing messages
     while not cancellation_token:
         # Use select to know when we have data to receive
@@ -47,10 +55,12 @@ def recv_and_process():
             except BrokenPipeError:  # If the socket is shut down, we'll get this error
                 return
             # Parse the data
-            address, osc_data, message_index, success = osc_wrapper.parse_osc_wrapper(data)
-            # If the parse was successful, process the message
-            if success:
-                process_osc_message(address, osc_data)
+            index = 0
+            success = False
+            while success or index == 0:
+                address, osc_data, index, success = osc_wrapper.parse_osc_wrapper(data, index)
+                if success:
+                    process_osc_message(address, osc_data, standard)
 
 
 def set_remote_all_params_relevant(new_value):
@@ -72,6 +82,7 @@ class VRCFT_OSC_Server(bpy.types.Operator):
         global recv_sock
         global cancellation_token
         global shape_keys
+        global cached_address_conversions
 
         wm = context.window_manager
 
@@ -80,6 +91,7 @@ class VRCFT_OSC_Server(bpy.types.Operator):
         else:
             cancellation_token = False
             shape_keys = {}
+            cached_address_conversions = {}
 
             # If the mesh has no blend shapes, return an error
             if context.scene.vrcft_target_mesh is None:
@@ -94,9 +106,12 @@ class VRCFT_OSC_Server(bpy.types.Operator):
                 name = key.name.replace(context.scene.vrcft_shapekey_prefix, "").replace('_', '').lower()
                 shape_keys[name] = key
 
+            # Get the value of the enum row.prop(scene, "vrcft_shapekey_standard", text="Shapekey Standard")
+            prop = context.scene.vrcft_shapekey_standard
+
             recv_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             recv_sock.bind(("127.0.0.1", context.scene.vrcft_osc_port))
-            thread = threading.Thread(target=recv_and_process)
+            thread = threading.Thread(target=recv_and_process, args=(prop,))
             thread.start()
 
             # Now tell vrcft to start sending all osc messages

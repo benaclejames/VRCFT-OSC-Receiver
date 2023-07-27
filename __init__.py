@@ -1,7 +1,7 @@
 bl_info = {
     "name": "VRCFT OSC Receiver",
     "author": "benaclejames",
-    "version": (1, 0, 0),
+    "version": (1, 1, 0),
     "blender": (2, 80, 0),
     "location": "3D Viewport > Sidebar > VRCFT OSC",
     "description": "Allows you to receive OSC messages from VRCFT and use them to control blendshapes in Blender.",
@@ -42,6 +42,8 @@ class VIEW3D_PT_VRCFT_Receiver(bpy.types.Panel):
         row.operator("wm.vrcft_osc_server", text=server_button_text)
         row = col.row(align=True)
         row.prop(scene, "vrcft_osc_port", text="Receive Port")
+        row = col.row(align=True)
+        row.prop(scene, "vrcft_shapekey_standard", text="Shapekey Standard")
 
         col.separator()
         col.separator()
@@ -58,6 +60,16 @@ class VIEW3D_PT_VRCFT_Receiver(bpy.types.Panel):
 from .credits import VIEW3D_PT_VRCFT_Credits
 from .osc_server import VRCFT_OSC_Server, shutdown
 
+shapekey_standards = bpy.props.EnumProperty(
+    items=[
+        ("v1", "V1", "V1"),
+        ("v2", "V2", "V2"),
+    ],
+    name="Shapekey Standards",
+    description="Which version of VRCFT are you using?",
+    default="v2"
+)
+
 
 def register():
     pcoll = bpy.utils.previews.new()
@@ -71,6 +83,7 @@ def register():
     bpy.types.Scene.vrcft_osc_port = bpy.props.IntProperty(default=9000)
     bpy.types.Scene.vrcft_target_mesh = bpy.props.PointerProperty(type=bpy.types.Mesh)
     bpy.types.Scene.vrcft_shapekey_prefix = bpy.props.StringProperty()
+    bpy.types.Scene.vrcft_shapekey_standard = shapekey_standards
 
     bpy.utils.register_class(VRCFT_OSC_Server)
     bpy.utils.register_class(VIEW3D_PT_VRCFT_Receiver)
