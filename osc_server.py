@@ -1,7 +1,7 @@
 import bpy
+import queue
 import socket
 import threading
-import os
 import select
 from . import osc_wrapper
 
@@ -10,6 +10,7 @@ recv_sock = None
 cancellation_token = False
 shape_keys = {}
 cached_address_conversions = {}
+message_queue = queue.Queue()
 
 
 def shutdown():
@@ -60,7 +61,7 @@ def recv_and_process(standard):
             while success or index == 0:
                 address, osc_data, index, success = osc_wrapper.parse_osc_wrapper(data, index)
                 if success:
-                    process_osc_message(address, osc_data, standard)
+                    message_queue.put((address, osc_data, standard))
 
 
 def set_remote_all_params_relevant(new_value):
@@ -69,6 +70,11 @@ def set_remote_all_params_relevant(new_value):
 
     send_sock.sendto(send_bytes, ("127.0.0.1", 9001))
 
+def execute_queued_functions():
+    while not message_queue.empty():
+        (address, osc_data, standard) = message_queue.get()
+        process_osc_message(address, osc_data, standard)
+    return 0
 
 class VRCFT_OSC_Server(bpy.types.Operator):
     """Start OSC Server"""
@@ -116,6 +122,7 @@ class VRCFT_OSC_Server(bpy.types.Operator):
 
             # Now tell vrcft to start sending all osc messages
             set_remote_all_params_relevant(True)
+            bpy.app.timers.register(execute_queued_functions)
 
         wm.vrcft_osc_server_active = not wm.vrcft_osc_server_active
         return {'FINISHED'}

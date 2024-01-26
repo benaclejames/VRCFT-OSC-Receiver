@@ -1,7 +1,7 @@
 bl_info = {
     "name": "VRCFT OSC Receiver",
     "author": "benaclejames",
-    "version": (1, 1, 0),
+    "version": (1, 2, 0),
     "blender": (2, 80, 0),
     "location": "3D Viewport > Sidebar > VRCFT OSC",
     "description": "Allows you to receive OSC messages from VRCFT and use them to control blendshapes in Blender.",
