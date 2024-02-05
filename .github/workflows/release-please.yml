@@ -1,0 +1,40 @@
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+name: release-please
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Create out folder
+        run: mkdir out
+
+      - name: Create zip file
+        run: |
+          REPO_NAME=$(basename $GITHUB_REPOSITORY)
+          ZIP_FILE="out/$REPO_NAME.zip"
+          # Exclude .github folder
+          zip -r "$ZIP_FILE" * -x ".github/*"
+
+      - name: Upload zip file
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.run_id }}-artifacts
+          path: ${{ github.workspace }}/out
+
+      - name: Release Please Action
+        uses: google-github-actions/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: simple
+          path: out
