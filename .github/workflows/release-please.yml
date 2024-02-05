@@ -24,7 +24,7 @@ jobs:
           REPO_NAME=$(basename $GITHUB_REPOSITORY)
           ZIP_FILE="out/$REPO_NAME.zip"
           # Exclude .github folder
-          zip -r "$ZIP_FILE" * -x ".github/*"
+          zip -r "$ZIP_FILE" * -x ".github/*" -x "out/*"
 
       - name: Upload zip file
         uses: actions/upload-artifact@v2
@@ -37,4 +37,4 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: simple
-          path: out
+          path: ${{ github.workspace }}/out
