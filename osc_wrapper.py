@@ -52,7 +52,13 @@ def create_osc_bundle(buf, messages, len, message_index):
     return fti_osc_lib.create_osc_bundle(buf, messages, len, message_index)
 
 
-def parse_osc_wrapper(osc_data, message_index=0):
+def parse_osc_wrapper(osc_data, message_index=0, is_bundle=False):
+    if is_bundle:
+        # special parsing as we get messagelen. honestly this whole method is jank but i cba to add the functionality to fti_osc
+        bumped_message_index = message_index + 4
+        message_len = int.from_bytes(osc_data[message_index:bumped_message_index], byteorder='big')
+        osc_data = osc_data[bumped_message_index:bumped_message_index+message_len]
+
     # Convert the bytes object to a ctypes array of c_byte
     buffer_array = (c_byte * len(osc_data))(*osc_data)
 
@@ -60,11 +66,12 @@ def parse_osc_wrapper(osc_data, message_index=0):
     message = OscMessageMeta()
 
     # Create a variable to store the message index
-    message_index = c_int(message_index)
+    message_index = c_int(message_index if not is_bundle else 0)
 
     # Call the parse_osc function
     success = fti_osc_lib.parse_osc(buffer_array, len(osc_data), byref(message_index), byref(message))
-
+    if is_bundle:
+        message_index.value += bumped_message_index
     if success:
         # Access the parsed values from the message structure
         address = message.Address.decode("utf-8")

@@ -37,8 +37,8 @@ class VIEW3D_PT_VRCFT_Credits(bpy.types.Panel):
                      icon_value=twitter_icon.icon_id).url = "https://twitter.com/benaclejames"
         row = col.row(align=True)
         row.scale_y = 1.5
-        patreon_icon = pcoll["patreon"]
-        row.operator("wm.url_open", text="Support me on Patreon",
-                     icon_value=patreon_icon.icon_id).url = "https://www.patreon.com/benaclejames"
-        row = col.row(align=True)
+        #patreon_icon = pcoll["patreon"]
+        #row.operator("wm.url_open", text="Support me on Patreon",
+        #             icon_value=patreon_icon.icon_id).url = "https://www.patreon.com/benaclejames"
+        #row = col.row(align=True)
         row.label(text="Thanks so much for your support!", icon="BLENDER")

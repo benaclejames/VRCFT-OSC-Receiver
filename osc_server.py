@@ -10,6 +10,7 @@ recv_sock = None
 cancellation_token = False
 shape_keys = {}
 cached_address_conversions = {}
+cached_message_prefix = ""
 message_queue = queue.Queue()
 
 
@@ -32,11 +33,12 @@ def process_osc_message(address, osc_data, standard):
         protocol = split[3]
         if protocol != "v2":
             protocol = "v1"
-        name = split[-1]
         if protocol != standard:
             return
 
+        name = cached_message_prefix + split[-1]
         cached_address_conversions[address] = name.lower()
+
     param_name = cached_address_conversions[address]
     if param_name in shape_keys:
         shape_key = shape_keys[param_name]
@@ -58,8 +60,15 @@ def recv_and_process(standard):
             # Parse the data
             index = 0
             success = False
+            bundle = False
+
+            if data[0] == 35: # If this starts with a # then it's prob a bundle and we may as well treat it as such and skip the header
+                bundle = True
+                success = True
+                index = 16  # skip the 8 byte header and 8 byte timetag
+
             while success or index == 0:
-                address, osc_data, index, success = osc_wrapper.parse_osc_wrapper(data, index)
+                address, osc_data, index, success = osc_wrapper.parse_osc_wrapper(data, index, bundle)
                 if success:
                     message_queue.put((address, osc_data, standard))
 
@@ -89,6 +98,7 @@ class VRCFT_OSC_Server(bpy.types.Operator):
         global cancellation_token
         global shape_keys
         global cached_address_conversions
+        global cached_message_prefix
 
         wm = context.window_manager
 
@@ -108,8 +118,9 @@ class VRCFT_OSC_Server(bpy.types.Operator):
                 self.report({'ERROR'}, "Mesh has no blendshapes")
                 return {'CANCELLED'}
 
+            cached_message_prefix = context.scene.vrcft_shapekey_prefix.replace('_', '').lower()
             for key in context.scene.vrcft_target_mesh.shape_keys.key_blocks:
-                name = key.name.replace(context.scene.vrcft_shapekey_prefix, "").replace('_', '').lower()
+                name = key.name.replace('_', '').lower()
                 shape_keys[name] = key
 
             # Get the value of the enum row.prop(scene, "vrcft_shapekey_standard", text="Shapekey Standard")

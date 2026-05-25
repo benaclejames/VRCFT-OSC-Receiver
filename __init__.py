@@ -74,7 +74,7 @@ shapekey_standards = bpy.props.EnumProperty(
 def register():
     pcoll = bpy.utils.previews.new()
 
-    pcoll.load("patreon", os.path.join(os.path.dirname(__file__), "res", "icons", "patreon.png"), "IMAGE")
+    #pcoll.load("patreon", os.path.join(os.path.dirname(__file__), "res", "icons", "patreon.png"), "IMAGE")
     pcoll.load("kofi", os.path.join(os.path.dirname(__file__), "res", "icons", "kofi.png"), "IMAGE")
     pcoll.load("twitter", os.path.join(os.path.dirname(__file__), "res", "icons", "twitter.png"), "IMAGE")
     preview_collections["main"] = pcoll
